@@ -1,0 +1,470 @@
+-- Create a new database
+CREATE DATABASE ProcurementAnalytics;
+GO
+
+-- Use the database
+USE ProcurementAnalytics;
+GO
+
+-- DIMENSION TABLES
+
+-- Create Dimension: Suppliers table
+CREATE TABLE DimSupplier (
+    SupplierID INT PRIMARY KEY,
+    SupplierName VARCHAR(100),
+    ContactPerson VARCHAR(100),
+    Email VARCHAR(100),
+    Phone VARCHAR(20),
+    Address VARCHAR(200),
+    City VARCHAR(50),
+    Country VARCHAR(50),
+    Category VARCHAR(50),
+    RegistrationDate DATE,
+    RiskRating VARCHAR(20),
+    IsActive BIT
+);
+GO
+
+-- Create Dimension: Contracts table
+CREATE TABLE DimContract (
+    ContractID INT PRIMARY KEY,
+    SupplierID INT FOREIGN KEY REFERENCES DimSupplier(SupplierID),
+    ContractNumber VARCHAR(50),
+    ContractType VARCHAR(50),
+    Description VARCHAR(200),
+    StartDate DATE,
+    EndDate DATE,
+    TotalValue DECIMAL(15,2),
+    Currency VARCHAR(3),
+    Department VARCHAR(50),
+    ContractManager VARCHAR(100),
+    Status VARCHAR(20),
+    RenewalOption BIT,
+    CreationDate DATE
+);
+GO
+
+-- Create Dimension: Time table
+CREATE TABLE DimTime (
+    DateKey INT PRIMARY KEY,
+    FullDate DATE,
+    DayOfWeek INT,
+    DayName VARCHAR(10),
+    DayOfMonth INT,
+    DayOfYear INT,
+    WeekOfYear INT,
+    MonthName VARCHAR(10),
+    MonthOfYear INT,
+    Quarter INT,
+    Year INT,
+    IsWeekend BIT,
+    IsHoliday BIT,
+    HolidayName VARCHAR(50)
+);
+GO
+
+-- Create Dimension: Department table
+CREATE TABLE DimDepartment (
+    DepartmentID INT PRIMARY KEY IDENTITY(1,1),
+    DepartmentName VARCHAR(50),
+    DepartmentHead VARCHAR(100),
+    ParentDepartment INT NULL FOREIGN KEY REFERENCES DimDepartment(DepartmentID),
+    BudgetCenter VARCHAR(20),
+    CostCenter VARCHAR(20),
+    IsActive BIT
+);
+GO
+
+-- FACT TABLES
+
+-- Create Fact: Payments table
+CREATE TABLE FactPayment (
+    PaymentID INT PRIMARY KEY,
+    ContractID INT FOREIGN KEY REFERENCES DimContract(ContractID),
+    InvoiceNumber VARCHAR(50),
+    InvoiceDate DATE,
+    InvoiceAmount DECIMAL(15,2),
+    PaymentDate DATE,
+    PaymentAmount DECIMAL(15,2),
+    PaymentMethod VARCHAR(30),
+    DueDate DATE,
+    Status VARCHAR(20),
+    ApprovedBy VARCHAR(100),
+    Notes VARCHAR(200)
+);
+GO
+
+-- Create Fact: Compliance table
+CREATE TABLE FactCompliance (
+    ComplianceID INT PRIMARY KEY,
+    SupplierID INT FOREIGN KEY REFERENCES DimSupplier(SupplierID),
+    DocumentType VARCHAR(50),
+    DocumentNumber VARCHAR(50),
+    IssueDate DATE,
+    ExpiryDate DATE,
+    Status VARCHAR(20),
+    VerifiedBy VARCHAR(100),
+    VerificationDate DATE,
+    Notes VARCHAR(200)
+);
+GO
+
+-- Create Fact: Performance table
+CREATE TABLE FactPerformance (
+    PerformanceID INT PRIMARY KEY,
+    ContractID INT FOREIGN KEY REFERENCES DimContract(ContractID),
+    EvaluationDate DATE,
+    QualityScore DECIMAL(5,2),
+    DeliveryScore DECIMAL(5,2),
+    CommunicationScore DECIMAL(5,2),
+    CostScore DECIMAL(5,2),
+    OverallScore DECIMAL(5,2),
+    EvaluatedBy VARCHAR(100),
+    Comments VARCHAR(500)
+);
+GO
+
+-- Create Fact: BudgetVsActual table
+CREATE TABLE FactBudgetVsActual (
+    BudgetID INT PRIMARY KEY,
+    ContractID INT FOREIGN KEY REFERENCES DimContract(ContractID),
+    FiscalYear INT,
+    FiscalQuarter INT,
+    PlannedAmount DECIMAL(15,2),
+    ActualAmount DECIMAL(15,2),
+    Variance DECIMAL(15,2),
+    VariancePercentage DECIMAL(5,2),
+    UpdatedDate DATE,
+    UpdatedBy VARCHAR(100),
+    Comments VARCHAR(200)
+);
+GO
+
+-- Create Fact: ContractRisk table
+CREATE TABLE FactContractRisk (
+    RiskID INT PRIMARY KEY,
+    ContractID INT FOREIGN KEY REFERENCES DimContract(ContractID),
+    RiskType VARCHAR(50),
+    RiskDescription VARCHAR(200),
+    Probability VARCHAR(20),
+    Impact VARCHAR(20),
+    MitigationStrategy VARCHAR(200),
+    RiskOwner VARCHAR(100),
+    IdentificationDate DATE,
+    Status VARCHAR(20),
+    UpdateDate DATE
+);
+GO
+
+-- Insert data into DimSupplier table
+INSERT INTO DimSupplier VALUES
+(1, 'TechSolutions Inc.', 'John Smith', 'j.smith@techsolutions.com', '555-1234', '123 Tech Ave', 'San Francisco', 'USA', 'IT Services', '2019-05-12', 'Low', 1),
+(2, 'Global Office Supplies', 'Mary Johnson', 'm.johnson@globaloffice.com', '555-2345', '456 Supply St', 'Chicago', 'USA', 'Office Supplies', '2018-03-24', 'Medium', 1),
+(3, 'BuildRight Construction', 'Robert Garcia', 'r.garcia@buildright.com', '555-3456', '789 Builder Rd', 'Dallas', 'USA', 'Construction', '2020-07-15', 'Medium', 1),
+(4, 'Quantum Electronics', 'Sarah Lee', 's.lee@quantum.com', '555-4567', '101 Circuit Blvd', 'Boston', 'USA', 'Electronics', '2017-11-30', 'Low', 1),
+(5, 'Clean Services Co.', 'David Wilson', 'd.wilson@cleanservices.com', '555-5678', '202 Janitorial Ave', 'Miami', 'USA', 'Cleaning Services', '2021-01-10', 'Low', 1),
+(6, 'Logistics Masters', 'Jennifer Brown', 'j.brown@logisticsmasters.com', '555-6789', '303 Shipping Ln', 'Seattle', 'USA', 'Logistics', '2019-09-05', 'High', 1),
+(7, 'Professional Consulting Group', 'Michael Taylor', 'm.taylor@profconsulting.com', '555-7890', '404 Advisory Dr', 'New York', 'USA', 'Consulting', '2018-06-22', 'Medium', 1),
+(8, 'EcoFriendly Materials', 'Emma White', 'e.white@ecofriendly.com', '555-8901', '505 Green Way', 'Portland', 'USA', 'Materials', '2020-04-18', 'Low', 1),
+(9, 'Innovate Software Solutions', 'Kevin Patel', 'k.patel@innovatesw.com', '555-9012', '606 Code St', 'Austin', 'USA', 'Software', '2017-08-14', 'Medium', 1),
+(10, 'SecureNet Systems', 'Laura Martinez', 'l.martinez@securenet.com', '555-0123', '707 Security Blvd', 'Denver', 'USA', 'IT Security', '2021-02-28', 'High', 1),
+(11, 'Office Furniture Plus', 'Thomas Clark', 't.clark@officefurniture.com', '555-1235', '808 Chair St', 'Atlanta', 'USA', 'Furniture', '2019-11-15', 'Low', 1),
+(12, 'Global Training Solutions', 'Amanda Rodriguez', 'a.rodriguez@globaltraining.com', '555-2346', '909 Training Cir', 'Philadelphia', 'USA', 'Training', '2018-10-07', 'Low', 1),
+(13, 'Industrial Equipment Co.', 'James Wilson', 'j.wilson@industrialequip.com', '555-3457', '110 Machine Ave', 'Detroit', 'USA', 'Equipment', '2020-01-20', 'High', 1),
+(14, 'Network Infrastructure Inc.', 'Sophia Lee', 's.lee@networkinfra.com', '555-4568', '211 Router Way', 'San Jose', 'USA', 'Networking', '2017-04-10', 'Medium', 0),
+(15, 'Legal Services International', 'Daniel Brown', 'd.brown@legalservices.com', '555-5679', '312 Legal Dr', 'Washington DC', 'USA', 'Legal', '2021-03-05', 'Medium', 1);
+GO
+
+-- Insert data into DimContract table
+INSERT INTO DimContract VALUES
+(101, 1, 'TECH-2023-001', 'Service', 'IT Infrastructure Maintenance', '2023-01-15', '2024-01-14', 240000.00, 'USD', 'IT', 'Michael Richards', 'Active', 1, '2022-12-10'),
+(102, 2, 'SUPP-2023-001', 'Purchase', 'Office Supplies Monthly Delivery', '2023-02-01', '2024-01-31', 36000.00, 'USD', 'Administration', 'Linda Thomas', 'Active', 1, '2023-01-15'),
+(103, 3, 'CONS-2023-001', 'Service', 'Headquarters Renovation', '2023-03-10', '2023-09-30', 1500000.00, 'USD', 'Facilities', 'Robert Johnson', 'Completed', 0, '2023-02-01'),
+(104, 4, 'ELEC-2023-001', 'Purchase', 'Computer Equipment Upgrade', '2023-04-01', '2023-04-30', 75000.00, 'USD', 'IT', 'Michael Richards', 'Completed', 0, '2023-03-15'),
+(105, 5, 'CLEA-2023-001', 'Service', 'Office Cleaning Services', '2023-01-01', '2023-12-31', 48000.00, 'USD', 'Facilities', 'Robert Johnson', 'Active', 1, '2022-11-20'),
+(106, 6, 'LOGI-2023-001', 'Service', 'Distribution Services', '2023-05-15', '2024-05-14', 180000.00, 'USD', 'Operations', 'Sarah Miller', 'Active', 1, '2023-04-10'),
+(107, 7, 'CONS-2023-002', 'Service', 'Strategic Business Consulting', '2023-06-01', '2023-11-30', 125000.00, 'USD', 'Executive', 'David Wilson', 'Active', 0, '2023-05-15'),
+(108, 8, 'MATE-2023-001', 'Purchase', 'Sustainable Packaging Materials', '2023-07-01', '2024-06-30', 95000.00, 'USD', 'Operations', 'Sarah Miller', 'Active', 1, '2023-06-15'),
+(109, 9, 'SOFT-2023-001', 'License', 'ERP Software Implementation', '2023-08-15', '2024-08-14', 350000.00, 'USD', 'IT', 'Michael Richards', 'Active', 1, '2023-07-20'),
+(110, 10, 'SECU-2023-001', 'Service', 'Cybersecurity Assessment', '2023-09-01', '2023-11-30', 60000.00, 'USD', 'IT', 'Michael Richards', 'Active', 0, '2023-08-15'),
+(111, 11, 'FURN-2023-001', 'Purchase', 'Office Furniture Replacement', '2023-10-01', '2023-10-31', 85000.00, 'USD', 'Facilities', 'Robert Johnson', 'Pending', 0, '2023-09-15'),
+(112, 12, 'TRAI-2023-001', 'Service', 'Employee Development Program', '2023-11-01', '2024-04-30', 75000.00, 'USD', 'HR', 'Jennifer Adams', 'Pending', 0, '2023-10-15'),
+(113, 13, 'EQUI-2023-001', 'Purchase', 'Warehouse Equipment', '2023-03-15', '2023-04-15', 120000.00, 'USD', 'Operations', 'Sarah Miller', 'Completed', 0, '2023-02-20'),
+(114, 14, 'NETW-2022-001', 'Service', 'Network Upgrade', '2022-12-01', '2023-06-30', 210000.00, 'USD', 'IT', 'Michael Richards', 'Completed', 0, '2022-11-15'),
+(115, 15, 'LEGA-2023-001', 'Service', 'Legal Advisory Services', '2023-01-01', '2023-12-31', 96000.00, 'USD', 'Legal', 'Patricia Lee', 'Active', 1, '2022-12-15'),
+(116, 1, 'TECH-2022-001', 'Service', 'IT Support Services', '2022-07-01', '2023-06-30', 200000.00, 'USD', 'IT', 'Michael Richards', 'Completed', 0, '2022-06-15'),
+(117, 2, 'SUPP-2022-001', 'Purchase', 'Office Supplies Annual Contract', '2022-08-01', '2023-07-31', 40000.00, 'USD', 'Administration', 'Linda Thomas', 'Completed', 0, '2022-07-15'),
+(118, 5, 'CLEA-2022-001', 'Service', 'Office Cleaning Previous Contract', '2022-01-01', '2022-12-31', 45000.00, 'USD', 'Facilities', 'Robert Johnson', 'Completed', 0, '2021-12-15'),
+(119, 7, 'CONS-2022-001', 'Service', 'Operational Efficiency Consulting', '2022-09-01', '2022-12-31', 80000.00, 'USD', 'Operations', 'Sarah Miller', 'Completed', 0, '2022-08-15'),
+(120, 10, 'SECU-2022-001', 'Service', 'Security Systems Upgrade', '2022-04-01', '2022-06-30', 45000.00, 'USD', 'IT', 'Michael Richards', 'Completed', 0, '2022-03-15');
+GO
+
+
+-- Insert data into DimDepartment table
+INSERT INTO DimDepartment (DepartmentName, DepartmentHead, ParentDepartment, BudgetCenter, CostCenter, IsActive)
+VALUES
+('Executive', 'John Williams', NULL, 'BC001', 'CC001', 1),
+('IT', 'Michael Richards', 1, 'BC002', 'CC002', 1),
+('Finance', 'Elizabeth Davis', 1, 'BC003', 'CC003', 1),
+('Operations', 'Sarah Miller', 1, 'BC004', 'CC004', 1),
+('HR', 'Jennifer Adams', 1, 'BC005', 'CC005', 1),
+('Legal', 'Patricia Lee', 1, 'BC006', 'CC006', 1),
+('Facilities', 'Robert Johnson', 4, 'BC007', 'CC007', 1),
+('Administration', 'Linda Thomas', 5, 'BC008', 'CC008', 1),
+('Marketing', 'William Turner', 1, 'BC009', 'CC009', 1),
+('Sales', 'Christopher Evans', 1, 'BC010', 'CC010', 1);
+GO
+
+-- Create a stored procedure to populate the time dimension
+CREATE PROCEDURE PopulateDimTime
+    @StartDate DATE,
+    @EndDate DATE
+AS
+BEGIN
+    DECLARE @CurrentDate DATE = @StartDate;
+    
+    WHILE @CurrentDate <= @EndDate
+    BEGIN
+        INSERT INTO DimTime (
+            DateKey,
+            FullDate,
+            DayOfWeek,
+            DayName,
+            DayOfMonth,
+            DayOfYear,
+            WeekOfYear,
+            MonthName,
+            MonthOfYear,
+            Quarter,
+            Year,
+            IsWeekend,
+            IsHoliday,
+            HolidayName
+        )
+        VALUES (
+            CONVERT(INT, CONVERT(VARCHAR, @CurrentDate, 112)),
+            @CurrentDate,
+            DATEPART(WEEKDAY, @CurrentDate),
+            DATENAME(WEEKDAY, @CurrentDate),
+            DAY(@CurrentDate),
+            DATEPART(DAYOFYEAR, @CurrentDate),
+            DATEPART(WEEK, @CurrentDate),
+            DATENAME(MONTH, @CurrentDate),
+            MONTH(@CurrentDate),
+            DATEPART(QUARTER, @CurrentDate),
+            YEAR(@CurrentDate),
+            CASE WHEN DATEPART(WEEKDAY, @CurrentDate) IN (1, 7) THEN 1 ELSE 0 END,
+            0, -- IsHoliday (would need to be updated separately)
+            NULL -- HolidayName
+        );
+        
+        SET @CurrentDate = DATEADD(DAY, 1, @CurrentDate);
+    END;
+END;
+GO
+
+
+-- Populate the Time dimension for 2022-2024
+EXEC PopulateDimTime '2022-01-01', '2024-12-31';
+GO
+
+-- Insert data into FactPayment table
+INSERT INTO FactPayment VALUES
+(1001, 101, 'INV-TS-23001', '2023-02-15', 20000.00, '2023-03-10', 20000.00, 'Bank Transfer', '2023-03-15', 'Paid', 'Michael Richards', NULL),
+(1002, 101, 'INV-TS-23002', '2023-03-15', 20000.00, '2023-04-12', 20000.00, 'Bank Transfer', '2023-04-15', 'Paid', 'Michael Richards', NULL),
+(1003, 101, 'INV-TS-23003', '2023-04-15', 20000.00, '2023-05-17', 20000.00, 'Bank Transfer', '2023-05-15', 'Paid', 'Michael Richards', 'Payment delayed by 2 days'),
+(1004, 101, 'INV-TS-23004', '2023-05-15', 20000.00, '2023-06-14', 20000.00, 'Bank Transfer', '2023-06-15', 'Paid', 'Michael Richards', NULL),
+(1005, 101, 'INV-TS-23005', '2023-06-15', 20000.00, '2023-07-18', 20000.00, 'Bank Transfer', '2023-07-15', 'Paid', 'Michael Richards', 'Payment delayed by 3 days'),
+(1006, 101, 'INV-TS-23006', '2023-07-15', 20000.00, '2023-08-14', 20000.00, 'Bank Transfer', '2023-08-15', 'Paid', 'Michael Richards', NULL),
+(1007, 101, 'INV-TS-23007', '2023-08-15', 20000.00, '2023-09-15', 20000.00, 'Bank Transfer', '2023-09-15', 'Paid', 'Michael Richards', NULL),
+(1008, 101, 'INV-TS-23008', '2023-09-15', 20000.00, '2023-10-13', 20000.00, 'Bank Transfer', '2023-10-15', 'Paid', 'Michael Richards', NULL);
+GO
+
+-- Insert more payment data (batch 1)
+INSERT INTO FactPayment VALUES
+(1009, 102, 'INV-GOS-23001', '2023-02-28', 3000.00, '2023-03-25', 3000.00, 'Bank Transfer', '2023-03-30', 'Paid', 'Linda Thomas', NULL),
+(1010, 102, 'INV-GOS-23002', '2023-03-31', 3000.00, '2023-04-28', 3000.00, 'Bank Transfer', '2023-04-30', 'Paid', 'Linda Thomas', NULL),
+(1011, 102, 'INV-GOS-23003', '2023-04-30', 3000.00, '2023-06-02', 3000.00, 'Bank Transfer', '2023-05-30', 'Paid', 'Linda Thomas', 'Payment delayed due to invoice discrepancy'),
+(1012, 102, 'INV-GOS-23004', '2023-05-31', 3000.00, '2023-06-29', 3000.00, 'Bank Transfer', '2023-06-30', 'Paid', 'Linda Thomas', NULL),
+(1013, 102, 'INV-GOS-23005', '2023-06-30', 3000.00, '2023-07-28', 3000.00, 'Bank Transfer', '2023-07-30', 'Paid', 'Linda Thomas', NULL),
+(1014, 102, 'INV-GOS-23006', '2023-07-31', 3000.00, '2023-08-30', 3000.00, 'Bank Transfer', '2023-08-30', 'Paid', 'Linda Thomas', NULL),
+(1015, 102, 'INV-GOS-23007', '2023-08-31', 3000.00, '2023-09-29', 3000.00, 'Bank Transfer', '2023-09-30', 'Paid', 'Linda Thomas', NULL),
+(1016, 102, 'INV-GOS-23008', '2023-09-30', 3000.00, '2023-10-27', 3000.00, 'Bank Transfer', '2023-10-30', 'Paid', 'Linda Thomas', NULL);
+GO
+
+-- Insert more payment data (batch 2)
+INSERT INTO FactPayment VALUES
+(1017, 103, 'INV-BRC-23001', '2023-04-10', 300000.00, '2023-05-09', 300000.00, 'Bank Transfer', '2023-05-10', 'Paid', 'Robert Johnson', NULL),
+(1018, 103, 'INV-BRC-23002', '2023-05-10', 300000.00, '2023-06-09', 300000.00, 'Bank Transfer', '2023-06-10', 'Paid', 'Robert Johnson', NULL),
+(1019, 103, 'INV-BRC-23003', '2023-06-10', 300000.00, '2023-07-07', 300000.00, 'Bank Transfer', '2023-07-10', 'Paid', 'Robert Johnson', NULL),
+(1020, 103, 'INV-BRC-23004', '2023-07-10', 300000.00, '2023-08-09', 300000.00, 'Bank Transfer', '2023-08-10', 'Paid', 'Robert Johnson', NULL),
+(1021, 103, 'INV-BRC-23005', '2023-09-30', 300000.00, '2023-11-05', 300000.00, 'Bank Transfer', '2023-10-30', 'Paid', 'Robert Johnson', 'Final payment delayed due to inspection');
+GO
+
+-- Insert more payment data (batch 3)
+INSERT INTO FactPayment VALUES
+(1022, 104, 'INV-QE-23001', '2023-04-15', 75000.00, '2023-05-14', 75000.00, 'Bank Transfer', '2023-05-15', 'Paid', 'Michael Richards', NULL),
+(1023, 105, 'INV-CS-23001', '2023-01-31', 4000.00, '2023-02-27', 4000.00, 'Bank Transfer', '2023-03-02', 'Paid', 'Robert Johnson', NULL),
+(1024, 105, 'INV-CS-23002', '2023-02-28', 4000.00, '2023-03-30', 4000.00, 'Bank Transfer', '2023-03-30', 'Paid', 'Robert Johnson', NULL),
+(1025, 105, 'INV-CS-23003', '2023-03-31', 4000.00, '2023-04-28', 4000.00, 'Bank Transfer', '2023-04-30', 'Paid', 'Robert Johnson', NULL),
+(1026, 105, 'INV-CS-23004', '2023-04-30', 4000.00, '2023-05-25', 4000.00, 'Bank Transfer', '2023-05-30', 'Paid', 'Robert Johnson', NULL),
+(1027, 105, 'INV-CS-23005', '2023-05-31', 4000.00, '2023-06-29', 4000.00, 'Bank Transfer', '2023-06-30', 'Paid', 'Robert Johnson', NULL),
+(1028, 105, 'INV-CS-23006', '2023-06-30', 4000.00, '2023-07-28', 4000.00, 'Bank Transfer', '2023-07-30', 'Paid', 'Robert Johnson', NULL),
+(1029, 105, 'INV-CS-23007', '2023-07-31', 4000.00, '2023-08-29', 4000.00, 'Bank Transfer', '2023-08-30', 'Paid', 'Robert Johnson', NULL),
+(1030, 105, 'INV-CS-23008', '2023-08-31', 4000.00, '2023-09-28', 4000.00, 'Bank Transfer', '2023-09-30', 'Paid', 'Robert Johnson', NULL),
+(1031, 105, 'INV-CS-23009', '2023-09-30', 4000.00, '2023-10-27', 4000.00, 'Bank Transfer', '2023-10-30', 'Paid', 'Robert Johnson', NULL);
+GO
+
+-- Insert more payment data (batch 4)
+INSERT INTO FactPayment VALUES
+(1032, 106, 'INV-LM-23001', '2023-06-15', 15000.00, '2023-07-14', 15000.00, 'Bank Transfer', '2023-07-15', 'Paid', 'Sarah Miller', NULL),
+(1033, 106, 'INV-LM-23002', '2023-07-15', 15000.00, '2023-08-18', 15000.00, 'Bank Transfer', '2023-08-15', 'Paid', 'Sarah Miller', 'Payment delayed by 3 days'),
+(1034, 106, 'INV-LM-23003', '2023-08-15', 15000.00, '2023-09-14', 15000.00, 'Bank Transfer', '2023-09-15', 'Paid', 'Sarah Miller', NULL),
+(1035, 106, 'INV-LM-23004', '2023-09-15', 15000.00, '2023-10-16', 15000.00, 'Bank Transfer', '2023-10-15', 'Paid', 'Sarah Miller', 'Payment delayed by 1 day');
+GO
+
+-- Insert data into FactCompliance table (batch 1)
+INSERT INTO FactCompliance VALUES
+(2001, 1, 'Business License', 'BL12345678', '2023-01-01', '2024-01-01', 'Valid', 'John Anderson', '2023-01-15', NULL),
+(2002, 1, 'Insurance Certificate', 'IC98765432', '2023-01-01', '2024-01-01', 'Valid', 'John Anderson', '2023-01-15', NULL),
+(2003, 1, 'Tax Clearance', 'TC87654321', '2023-01-01', '2024-01-01', 'Valid', 'John Anderson', '2023-01-15', NULL),
+(2004, 2, 'Business License', 'BL23456789', '2023-02-01', '2024-02-01', 'Valid', 'John Anderson', '2023-02-15', NULL),
+(2005, 2, 'Insurance Certificate', 'IC87654321', '2023-02-01', '2024-02-01', 'Valid', 'John Anderson', '2023-02-15', NULL),
+(2006, 2, 'Tax Clearance', 'TC76543210', '2023-02-01', '2024-02-01', 'Valid', 'John Anderson', '2023-02-15', NULL),
+(2007, 3, 'Business License', 'BL34567890', '2023-03-01', '2024-03-01', 'Valid', 'John Anderson', '2023-03-15', NULL),
+(2008, 3, 'Insurance Certificate', 'IC76543210', '2023-03-01', '2024-03-01', 'Valid', 'John Anderson', '2023-03-15', NULL),
+(2009, 3, 'Tax Clearance', 'TC65432109', '2023-03-01', '2024-03-01', 'Valid', 'John Anderson', '2023-03-15', NULL),
+(2010, 3, 'Safety Certification', 'SC12345678', '2023-03-01', '2024-03-01', 'Valid', 'John Anderson', '2023-03-15', NULL);
+GO
+
+-- Insert data into FactCompliance table (batch 2)
+INSERT INTO FactCompliance VALUES
+(2011, 4, 'Business License', 'BL45678901', '2023-04-01', '2024-04-01', 'Valid', 'John Anderson', '2023-04-15', NULL),
+(2012, 4, 'Insurance Certificate', 'IC65432109', '2023-04-01', '2024-04-01', 'Valid', 'John Anderson', '2023-04-15', NULL),
+(2013, 4, 'Tax Clearance', 'TC54321098', '2023-04-01', '2024-04-01', 'Valid', 'John Anderson', '2023-04-15', NULL),
+(2014, 5, 'Business License', 'BL56789012', '2023-05-01', '2024-05-01', 'Valid', 'John Anderson', '2023-05-15', NULL),
+(2015, 5, 'Insurance Certificate', 'IC54321098', '2023-05-01', '2024-05-01', 'Valid', 'John Anderson', '2023-05-15', NULL),
+(2016, 5, 'Tax Clearance', 'TC43210987', '2023-05-01', '2024-05-01', 'Valid', 'John Anderson', '2023-05-15', NULL),
+(2017, 6, 'Business License', 'BL67890123', '2023-06-01', '2024-06-01', 'Valid', 'John Anderson', '2023-06-15', NULL),
+(2018, 6, 'Insurance Certificate', 'IC43210987', '2023-06-01', '2024-06-01', 'Valid', 'John Anderson', '2023-06-15', NULL),
+(2019, 6, 'Tax Clearance', 'TC32109876', '2023-06-01', '2024-06-01', 'Valid', 'John Anderson', '2023-06-15', NULL),
+(2020, 6, 'Transportation License', 'TL12345678', '2023-06-01', '2024-06-01', 'Valid', 'John Anderson', '2023-06-15', NULL);
+GO
+
+-- Insert more compliance data (batch 3)
+INSERT INTO FactCompliance VALUES
+(2021, 7, 'Business License', 'BL78901234', '2023-07-01', '2024-07-01', 'Valid', 'John Anderson', '2023-07-15', NULL),
+(2022, 7, 'Insurance Certificate', 'IC32109876', '2023-07-01', '2024-07-01', 'Valid', 'John Anderson', '2023-07-15', NULL),
+(2023, 7, 'Tax Clearance', 'TC21098765', '2023-07-01', '2024-07-01', 'Valid', 'John Anderson', '2023-07-15', NULL),
+(2024, 8, 'Business License', 'BL89012345', '2023-08-01', '2024-08-01', 'Valid', 'John Anderson', '2023-08-15', NULL),
+(2025, 8, 'Insurance Certificate', 'IC21098765', '2023-08-01', '2024-08-01', 'Valid', 'John Anderson', '2023-08-15', NULL),
+(2026, 8, 'Tax Clearance', 'TC10987654', '2023-08-01', '2024-08-01', 'Valid', 'John Anderson', '2023-08-15', NULL),
+(2027, 8, 'Environmental Certification', 'EC12345678', '2023-08-01', '2024-08-01', 'Valid', 'John Anderson', '2023-08-15', NULL),
+(2028, 9, 'Business License', 'BL90123456', '2023-02-01', '2024-02-01', 'Valid', 'John Anderson', '2023-02-15', NULL),
+(2029, 9, 'Insurance Certificate', 'IC10987654', '2023-02-01', '2024-02-01', 'Valid', 'John Anderson', '2023-02-15', NULL),
+(2030, 9, 'Tax Clearance', 'TC09876543', '2023-02-01', '2024-02-01', 'Valid', 'John Anderson', '2023-02-15', NULL);
+GO
+
+
+-- Insert data into FactPerformance table (batch 1)
+INSERT INTO FactPerformance VALUES
+(3001, 101, '2023-04-15', 4.5, 4.2, 4.8, 4.0, 4.4, 'Michael Richards', 'Good performance overall. Responsive to issues.'),
+(3002, 101, '2023-07-15', 4.7, 4.5, 4.8, 4.2, 4.6, 'Michael Richards', 'Improvement in delivery and cost management.'),
+(3003, 101, '2023-10-15', 4.8, 4.7, 4.9, 4.5, 4.7, 'Michael Richards', 'Consistent high-quality service delivery.'),
+(3004, 102, '2023-05-01', 4.0, 3.8, 4.2, 4.5, 4.1, 'Linda Thomas', 'Generally good, but some delivery delays.'),
+(3005, 102, '2023-08-01', 4.2, 4.0, 4.3, 4.5, 4.3, 'Linda Thomas', 'Improvement in delivery timeliness.'),
+(3006, 103, '2023-05-15', 4.6, 4.0, 4.3, 3.8, 4.2, 'Robert Johnson', 'High quality work but slightly over budget.'),
+(3007, 103, '2023-07-15', 4.7, 4.2, 4.5, 3.9, 4.3, 'Robert Johnson', 'Good progress, better cost management.'),
+(3008, 103, '2023-09-30', 4.8, 4.5, 4.6, 4.0, 4.5, 'Robert Johnson', 'Excellent completion of the project.'),
+(3009, 104, '2023-04-30', 4.9, 4.8, 4.7, 4.6, 4.8, 'Michael Richards', 'Excellent delivery of equipment, on time and high quality.'),
+(3010, 105, '2023-04-15', 3.8, 4.0, 3.5, 4.5, 3.9, 'Robert Johnson', 'Adequate service, some communication issues.');
+GO
+
+-- Insert data into FactPerformance table (batch 2)
+INSERT INTO FactPerformance VALUES
+(3011, 105, '2023-07-15', 4.0, 4.1, 3.8, 4.5, 4.1, 'Robert Johnson', 'Improvement in communication observed.'),
+(3012, 105, '2023-10-15', 4.2, 4.3, 4.0, 4.5, 4.3, 'Robert Johnson', 'Continued improvement in service quality.'),
+(3013, 106, '2023-08-15', 4.3, 4.0, 4.5, 4.2, 4.3, 'Sarah Miller', 'Good service quality, some minor delivery delays.'),
+(3014, 107, '2023-08-01', 4.8, 4.6, 4.9, 4.0, 4.6, 'David Wilson', 'Excellent consulting services, very insightful.'),
+(3015, 107, '2023-10-01', 4.9, 4.7, 4.9, 4.1, 4.7, 'David Wilson', 'Continued high-quality consulting and deliverables.'),
+(3016, 108, '2023-10-01', 4.7, 4.5, 4.3, 4.6, 4.5, 'Sarah Miller', 'High-quality sustainable materials, good value.'),
+(3017, 109, '2023-10-15', 4.4, 4.0, 4.6, 3.8, 4.2, 'Michael Richards', 'Software implementation progressing well, slightly behind schedule.'),
+(3018, 110, '2023-10-15', 4.9, 4.7, 4.8, 4.5, 4.7, 'Michael Richards', 'Excellent cybersecurity assessment, very thorough.'),
+(3019, 113, '2023-04-30', 4.6, 4.8, 4.5, 4.3, 4.6, 'Sarah Miller', 'Equipment delivered as specified, on time installation.'),
+(3020, 114, '2023-03-15', 4.3, 3.9, 4.5, 4.0, 4.2, 'Michael Richards', 'Network upgrade progressing well, minor delays.');
+GO
+
+-- Insert data into FactPerformance table (batch 3)
+INSERT INTO FactPerformance VALUES
+(3021, 114, '2023-06-30', 4.5, 4.2, 4.7, 4.1, 4.4, 'Michael Richards', 'Network upgrade completed successfully.'),
+(3022, 115, '2023-04-15', 4.7, 4.5, 4.8, 4.3, 4.6, 'Patricia Lee', 'Excellent legal services, very responsive.'),
+(3023, 115, '2023-07-15', 4.8, 4.6, 4.9, 4.4, 4.7, 'Patricia Lee', 'Consistent high-quality legal advice.'),
+(3024, 115, '2023-10-15', 4.9, 4.7, 5.0, 4.5, 4.8, 'Patricia Lee', 'Outstanding legal support throughout the year.'),
+(3025, 116, '2022-10-01', 4.4, 4.2, 4.6, 4.3, 4.4, 'Michael Richards', 'Reliable IT support services.'),
+(3026, 116, '2023-01-15', 4.5, 4.3, 4.7, 4.4, 4.5, 'Michael Richards', 'Consistent improvement in service delivery.'),
+(3027, 116, '2023-06-30', 4.6, 4.5, 4.8, 4.5, 4.6, 'Michael Richards', 'Excellent completion of the contract.'),
+(3028, 117, '2022-11-01', 4.2, 4.0, 4.3, 4.5, 4.3, 'Linda Thomas', 'Reliable supply of office materials.'),
+(3029, 117, '2023-02-01', 4.3, 4.1, 4.4, 4.6, 4.4, 'Linda Thomas', 'Consistent quality of supplies.'),
+(3030, 117, '2023-07-31', 4.4, 4.3, 4.5, 4.7, 4.5, 'Linda Thomas', 'Excellent supplier throughout the contract period.');
+GO
+
+-- Insert data into FactBudgetVsActual table
+INSERT INTO FactBudgetVsActual VALUES
+(4001, 101, 2023, 1, 60000.00, 60000.00, 0.00, 0.00, '2023-04-01', 'Financial Controller', NULL),
+(4002, 101, 2023, 2, 60000.00, 60000.00, 0.00, 0.00, '2023-07-01', 'Financial Controller', NULL),
+(4003, 101, 2023, 3, 60000.00, 60000.00, 0.00, 0.00, '2023-10-01', 'Financial Controller', NULL),
+(4004, 102, 2023, 1, 9000.00, 9000.00, 0.00, 0.00, '2023-04-01', 'Financial Controller', NULL),
+(4005, 102, 2023, 2, 9000.00, 9000.00, 0.00, 0.00, '2023-07-01', 'Financial Controller', NULL),
+(4006, 102, 2023, 3, 9000.00, 9000.00, 0.00, 0.00, '2023-10-01', 'Financial Controller', NULL),
+(4007, 103, 2023, 1, 0.00, 0.00, 0.00, 0.00, '2023-04-01', 'Financial Controller', 'Contract started in Q2'),
+(4008, 103, 2023, 2, 750000.00, 900000.00, 150000.00, 20.00, '2023-07-01', 'Financial Controller', 'Additional scope added'),
+(4009, 103, 2023, 3, 750000.00, 600000.00, -150000.00, -20.00, '2023-10-01', 'Financial Controller', 'Final payment less than projected'),
+(4010, 104, 2023, 2, 75000.00, 75000.00, 0.00, 0.00, '2023-07-01', 'Financial Controller', NULL);
+GO
+
+-- Insert more budget data (batch 2)
+INSERT INTO FactBudgetVsActual VALUES
+(4011, 105, 2023, 1, 12000.00, 12000.00, 0.00, 0.00, '2023-04-01', 'Financial Controller', NULL),
+(4012, 105, 2023, 2, 12000.00, 12000.00, 0.00, 0.00, '2023-07-01', 'Financial Controller', NULL),
+(4013, 105, 2023, 3, 12000.00, 12000.00, 0.00, 0.00, '2023-10-01', 'Financial Controller', NULL),
+(4014, 106, 2023, 2, 30000.00, 30000.00, 0.00, 0.00, '2023-07-01', 'Financial Controller', NULL),
+(4015, 106, 2023, 3, 30000.00, 30000.00, 0.00, 0.00, '2023-10-01', 'Financial Controller', NULL),
+(4016, 107, 2023, 2, 50000.00, 50000.00, 0.00, 0.00, '2023-07-01', 'Financial Controller', NULL),
+(4017, 107, 2023, 3, 50000.00, 50000.00, 0.00, 0.00, '2023-10-01', 'Financial Controller', NULL),
+(4018, 108, 2023, 3, 23750.00, 23750.00, 0.00, 0.00, '2023-10-01', 'Financial Controller', NULL),
+(4019, 109, 2023, 3, 70000.00, 70000.00, 0.00, 0.00, '2023-10-01', 'Financial Controller', NULL),
+(4020, 110, 2023, 3, 20000.00, 20000.00, 0.00, 0.00, '2023-10-01', 'Financial Controller', NULL);
+GO
+
+-- Insert more budget data (batch 3)
+INSERT INTO FactBudgetVsActual VALUES
+(4021, 113, 2023, 2, 120000.00, 120000.00, 0.00, 0.00, '2023-07-01', 'Financial Controller', NULL),
+(4022, 114, 2023, 1, 70000.00, 70000.00, 0.00, 0.00, '2023-04-01', 'Financial Controller', NULL),
+(4023, 114, 2023, 2, 70000.00, 70000.00, 0.00, 0.00, '2023-07-01', 'Financial Controller', NULL),
+(4024, 115, 2023, 1, 24000.00, 24000.00, 0.00, 0.00, '2023-04-01', 'Financial Controller', NULL),
+(4025, 115, 2023, 2, 24000.00, 24000.00, 0.00, 0.00, '2023-07-01', 'Financial Controller', NULL),
+(4026, 115, 2023, 3, 24000.00, 24000.00, 0.00, 0.00, '2023-10-01', 'Financial Controller', NULL);
+GO
+
+-- Insert data into FactContractRisk table
+INSERT INTO FactContractRisk VALUES
+(5001, 101, 'Performance', 'Potential service interruptions', 'Low', 'High', 'Regular service reviews and backup systems', 'Michael Richards', '2023-01-20', 'Monitored', '2023-10-01'),
+(5002, 101, 'Financial', 'Unexpected price increases', 'Medium', 'Medium', 'Price cap clause in contract', 'Financial Controller', '2023-01-20', 'Mitigated', '2023-10-01'),
+(5003, 102, 'Delivery', 'Supply chain disruptions', 'Medium', 'High', 'Multiple supplier strategy', 'Linda Thomas', '2023-02-05', 'Monitored', '2023-10-01'),
+(5004, 103, 'Schedule', 'Construction delays', 'High', 'High', 'Regular progress meetings and contingency planning', 'Robert Johnson', '2023-03-15', 'Closed', '2023-09-30'),
+(5005, 103, 'Financial', 'Budget overruns', 'High', 'High', 'Fixed price components and change management process', 'Financial Controller', '2023-03-15', 'Occurred', '2023-07-01'),
+(5006, 103, 'Quality', 'Substandard materials', 'Medium', 'High', 'Regular quality inspections and material testing', 'Robert Johnson', '2023-03-15', 'Mitigated', '2023-09-30'),
+(5007, 104, 'Delivery', 'Equipment availability', 'Medium', 'High', 'Early ordering and alternative models identified', 'Michael Richards', '2023-04-05', 'Closed', '2023-04-30'),
+(5008, 106, 'Performance', 'Service level failures', 'Medium', 'High', 'Clear SLAs and regular performance reviews', 'Sarah Miller', '2023-05-20', 'Monitored', '2023-10-01'),
+(5009, 107, 'Resource', 'Consultant availability', 'Low', 'Medium', 'Named resources clause and backup consultants', 'David Wilson', '2023-06-10', 'Monitored', '2023-10-01'),
+(5010, 109, 'Technical', 'Integration challenges', 'High', 'High', 'Phased implementation and robust testing', 'Michael Richards', '2023-08-20', 'Active', '2023-10-01');
+GO
+
+-- Insert more risk data
+INSERT INTO FactContractRisk VALUES
+(5011, 109, 'Schedule', 'Implementation delays', 'Medium', 'High', 'Detailed project plan with buffers', 'Michael Richards', '2023-08-20', 'Active', '2023-10-01'),
+(5012, 109, 'Operational', 'User adoption challenges', 'Medium', 'Medium', 'Comprehensive training and change management', 'HR Director', '2023-08-20', 'Active', '2023-10-01'),
+(5013, 110, 'Security', 'Incomplete security assessment', 'Low', 'High', 'Detailed scope and methodology review', 'Michael Richards', '2023-09-05', 'Monitored', '2023-10-01'),
+(5014, 113, 'Quality', 'Equipment defects', 'Low', 'High', 'Thorough testing and extended warranty', 'Sarah Miller', '2023-03-20', 'Closed', '2023-04-30'),
+(5015, 114, 'Technical', 'Network compatibility issues', 'Medium', 'High', 'Comprehensive network assessment and testing', 'Michael Richards', '2022-12-10', 'Closed', '2023-06-30');
+GO
